@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>YTM Calculator Test</title>
+</head>
+<body>
+  <h1>Testing JavaScript Module Loading</h1>
+  <div id="test-result">Loading...</div>
+  
+  <script type="module">
+    try {
+      // Test imports
+      const { state } = await import('./ytm-calculator-state.js');
+      const { calculateYTMMetrics } = await import('./ytm-calculator-calculations.js');
+      const { formatCurrency } = await import('./ytm-calculator-utils.js');
+      
+      // Run a test calculation
+      const result = calculateYTMMetrics({
+        price: 97.76,
+        couponPct: 11.0088,
+        years: 5,
+        face: 100
+      });
+      
+      document.getElementById('test-result').innerHTML = `
+        <h2>✓ All modules loaded successfully!</h2>
+        <p>Test Calculation:</p>
+        <ul>
+          <li>Price: ${formatCurrency(97.76)}</li>
+          <li>Coupon: 11.0088%</li>
+          <li>Years: 5</li>
+          <li><strong>YTM: ${(result.ytm * 100).toFixed(2)}%</strong></li>
+        </ul>
+        <p>The calculator is working correctly!</p>
+        <p><a href="ytm-calculator-index.html">Open Full Calculator</a></p>
+      `;
+    } catch (error) {
+      document.getElementById('test-result').innerHTML = `
+        <h2>✗ Error loading modules</h2>
+        <p style="color: red;">${error.message}</p>
+        <pre>${error.stack}</pre>
+      `;
+    }
+  </script>
+</body>
+</html>

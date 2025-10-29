@@ -11,6 +11,7 @@
   --color-yield: #7a46ff;
   --color-mint: #49b2b8;
   --color-orange: #ea792d;
+  --color-orange-text: #c5611f; /* Darker orange for small text (4.51:1 WCAG AA) */
   --color-purchase: #f2af81;
   --color-gray-50: #f9fafb;
   --color-gray-100: #f3f4f6;
@@ -215,7 +216,7 @@ math mo { margin: 0 0.1em; }
 }
 
 .result-title.price {
-  color: var(--color-orange);
+  color: var(--color-orange-text); /* Darker orange for WCAG AA compliance (4.51:1) */
 }
 
 .result-title.analysis {

@@ -6,6 +6,7 @@ import { createElement, listen } from './utils.js';
 
 export function initTooltips() {
   const triggers = document.querySelectorAll('[data-tooltip-id]');
+  
   triggers.forEach(trigger => {
     const id = trigger.getAttribute('data-tooltip-id');
     const text = trigger.getAttribute('data-tooltip-text');
@@ -14,7 +15,12 @@ export function initTooltips() {
     // Create tooltip if not present
     let tooltip = document.getElementById(id);
     if (!tooltip) {
-      tooltip = createElement('div', { id, role:'tooltip', className:'tooltip hidden' }, text);
+      // Your createElement signature: (tag, attrs, ...children)
+      tooltip = createElement('div', { 
+        id, 
+        role: 'tooltip', 
+        className: 'tooltip hidden' 
+      }, text);
       document.body.appendChild(tooltip);
     }
 
@@ -32,7 +38,9 @@ export function initTooltips() {
 
 function positionAndShow(trigger, tooltip) {
   tooltip.classList.remove('hidden');
-  tooltip.style.visibility='hidden'; tooltip.style.top='0'; tooltip.style.left='0';
+  tooltip.style.visibility='hidden';
+  tooltip.style.top='0';
+  tooltip.style.left='0';
 
   const rect = trigger.getBoundingClientRect();
   const scrollY = window.scrollY || document.documentElement.scrollTop;
@@ -42,7 +50,10 @@ function positionAndShow(trigger, tooltip) {
   const ttRect = tooltip.getBoundingClientRect();
   let top = rect.top + scrollY - ttRect.height - pad;
   let placement = 'top';
-  if (top < 0) { top = rect.bottom + scrollY + pad; placement = 'bottom'; }
+  if (top < 0) { 
+    top = rect.bottom + scrollY + pad;
+    placement = 'bottom';
+  }
 
   let left = rect.left + scrollX + rect.width/2 - ttRect.width/2;
   left = Math.max(8, Math.min(left, window.innerWidth - ttRect.width - 8));

@@ -8,7 +8,7 @@
   --color-dark: #06005a;
   --color-dark-alt: #38337b;
   --color-coupon: #3369FF; /* WCAG AA verified 4.55:1 */
-  --color-yield: #7a46ff;
+  --color-yield: #7e22ce; /* Updated from #7a46ff - WCAG AA verified 5.11:1 */
   --color-mint: #49b2b8;
   --color-orange: #ea792d;
   --color-orange-text: #c5611f; /* Darker orange for small text (4.51:1 WCAG AA) */
@@ -24,7 +24,7 @@
   --color-red-200: #fecaca;
   --color-red-300: #fca5a5;
   --color-red-700: #b91c1c;
-  --color-red-800: #991b1b;
+  --color-red-800: #991b1c;
   --color-blue-50: #eff6ff;
   --color-blue-500: #3b82f6;
   --color-blue-600: #2563eb;
@@ -136,6 +136,19 @@ body {
   margin-bottom: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.01em;
+  line-height: 1.3;
+}
+
+/* Ensure h3.card-title has consistent sizing */
+h3.card-title {
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+/* Ensure h4.card-title (nested headings) also match */
+h4.card-title {
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .card-content {
@@ -216,7 +229,7 @@ math mo { margin: 0 0.1em; }
 }
 
 .result-title.price {
-  color: var(--color-orange-text); /* Darker orange for WCAG AA compliance (4.51:1) */
+  color: var(--color-orange-text);
 }
 
 .result-title.analysis {
@@ -417,48 +430,53 @@ math mo { margin: 0 0.1em; }
 
 .input-group-inline {
   display: flex;
-  flex-wrap: nowrap;  /* Changed from wrap to nowrap to keep in one line */
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 3rem;  /* Increased from 2rem to 3rem for more breathing room */
-  overflow-x: auto;  /* Allow horizontal scrolling if needed on very small screens */
+  gap: 1.5rem;
+  overflow-x: auto;
 }
 
 .input-inline {
   display: flex;
   align-items: center;
-  gap: 0.75rem;  /* Increased from 0.5rem to 0.75rem */
+  gap: 1rem;  /* Increased gap to prevent label cutoff */
   white-space: nowrap;
-  flex-shrink: 0;  /* Prevent inputs from shrinking */
-}
-
-/* Extra spacing before first input to prevent range hint overlap */
-.input-inline:first-child {
-  margin-right: 1.5rem;  /* Increased from 1rem */
+  flex-shrink: 0;
+  min-width: 0;
 }
 
 .input-label-inline {
   font-size: 0.875rem;
   color: var(--color-gray-700);
-  margin-right: 0.5rem;  /* Increased from 0.25rem for better spacing */
+  cursor: help;
+  position: relative;
+  flex-shrink: 0;  /* Prevent label from shrinking */
+  min-width: fit-content;
 }
 
 .input-with-suffix-inline {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  width: 6rem;
+  width: 7rem;  /* Increased from 6rem */
   position: relative;
+  flex-shrink: 0;
 }
 
 .input-field-inline {
   flex: 1;
   padding: 0.4rem 0.5rem;
-  padding-right: 1.5rem;
+  padding-right: 1.75rem;  /* More room for suffix */
   border: 1px solid var(--color-gray-300);
   border-radius: 0.375rem;
   font-size: 0.875rem;
   text-align: right;
   box-sizing: border-box;
+  min-width: 0;
+}
+
+.input-field-inline:hover {
+  border-color: var(--color-gray-400);
 }
 
 .input-field-inline:focus {
@@ -477,14 +495,50 @@ math mo { margin: 0 0.1em; }
 
 .input-suffix-inline {
   position: absolute;
-  right: 0.4rem;
+  right: 0.5rem;
   top: 50%;
   transform: translateY(-50%);
   color: var(--color-gray-500);
   pointer-events: none;
-  width: 1.2rem;
-  text-align: right;
   font-size: 0.875rem;
+}
+
+/* JavaScript-based Tooltip Styles */
+.tooltip {
+  position: absolute;
+  background: var(--color-gray-800);
+  color: white;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.tooltip.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.tooltip::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 0.375rem solid transparent;
+}
+
+.tooltip[data-placement="top"]::after {
+  bottom: -0.75rem;
+  border-top-color: var(--color-gray-800);
+}
+
+.tooltip[data-placement="bottom"]::after {
+  top: -0.75rem;
+  border-bottom-color: var(--color-gray-800);
 }
 
 /* Only stack on very small mobile screens */
@@ -503,6 +557,11 @@ math mo { margin: 0 0.1em; }
   .input-with-suffix-inline {
     width: 100%;
     max-width: 12rem;
+  }
+  
+  /* Hide tooltips on mobile */
+  .tooltip {
+    display: none !important;
   }
 }
 

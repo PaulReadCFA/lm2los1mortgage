@@ -10,20 +10,25 @@
 </head>
 <body>
   <!-- Skip Links (must be first in DOM) -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
   <a href="#calculator" class="skip-link">Skip to calculator</a>
   <a href="#data-table" class="skip-link">Skip to data table</a>
 
   <div class="container">
-    <main class="content">
+    <main class="content" id="main-content">
       <!-- Card 1: Equation -->
-      <section class="card" id="equation-card">
-        <h4 class="card-title">Mortgage Payment Formula</h4>
+      <section class="card" id="equation-card" aria-labelledby="equation-title">
+        <h4 class="card-title" id="equation-title">Mortgage Payment Formula</h4>
         <div class="card-content">
           <p class="equation-intro">
             Fixed-rate mortgage with annual payments. The annual payment (PMT) is calculated as:
           </p>
 
-          <div class="equation-container" aria-describedby="equation-description">
+          <div class="equation-container">
+            <p class="sr-only" id="equation-description">
+              Mathematical formula showing how the annual mortgage payment (PMT) is calculated 
+              based on principal (P), interest rate (r), and number of years (n).
+            </p>
             <!-- MathML version -->
             <div id="mathml-equation">
               <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
@@ -34,14 +39,14 @@
                   <mo>×</mo>
                   <mfrac linethickness="1.2px">
                     <mrow>
-                      <mi mathcolor="#7a46ff">r</mi>
+                      <mi mathcolor="#7e22ce">r</mi>
                       <mo>×</mo>
                       <msup>
                         <mrow>
                           <mo>(</mo>
                           <mn>1</mn>
                           <mo>+</mo>
-                          <mi mathcolor="#7a46ff">r</mi>
+                          <mi mathcolor="#7e22ce">r</mi>
                           <mo>)</mo>
                         </mrow>
                         <mi>n</mi>
@@ -53,7 +58,7 @@
                           <mo>(</mo>
                           <mn>1</mn>
                           <mo>+</mo>
-                          <mi mathcolor="#7a46ff">r</mi>
+                          <mi mathcolor="#7e22ce">r</mi>
                           <mo>)</mo>
                         </mrow>
                         <mi>n</mi>
@@ -68,16 +73,16 @@
 
             <!-- HTML fallback -->
             <div id="html-equation" hidden>
-              <span class="bold" style="color:#ea792d;">PMT</span> =
+              <span class="bold" style="color:#c5611f;">PMT</span> =
               <span style="color:#3369FF;">P</span> × 
-              [<span style="color:#7a46ff;">r</span>(1 + <span style="color:#7a46ff;">r</span>)<sup>n</sup>] / 
-              [(1 + <span style="color:#7a46ff;">r</span>)<sup>n</sup> − 1]
+              [<span style="color:#7e22ce;">r</span>(1 + <span style="color:#7e22ce;">r</span>)<sup>n</sup>] / 
+              [(1 + <span style="color:#7e22ce;">r</span>)<sup>n</sup> − 1]
             </div>
           </div>
 
           <p class="equation-intro" style="margin-top: 0.75rem;">
             Where <strong style="color:#3369FF;">P</strong> = loan amount, 
-            <strong style="color:#7a46ff;">r</strong> = annual interest rate, 
+            <strong style="color:#7e22ce;">r</strong> = annual interest rate, 
             <strong>n</strong> = number of years.
           </p>
         </div>
@@ -87,8 +92,8 @@
       <div class="grid-container">
         <!-- Results -->
         <div class="grid-item-left">
-          <section class="card" id="results-card">
-            <h4 class="card-title">Results and Analysis</h4>
+          <section class="card" id="results-card" aria-labelledby="results-title">
+            <h4 class="card-title" id="results-title">Results and Analysis</h4>
             <div class="card-content">
               <div id="results-content">
                 <!-- Populated by JavaScript -->
@@ -99,8 +104,8 @@
 
         <!-- Visualizer (Chart/Table toggle) -->
         <div class="grid-item-right">
-          <section class="card" id="data-table" tabindex="-1">
-            <h4 class="card-title">Mortgage Cash Flows: Annual Payment Frequency</h4>
+          <section class="card" id="data-table" tabindex="-1" aria-labelledby="visualizer-title">
+            <h4 class="card-title" id="visualizer-title">Mortgage Cash Flows: Annual Payment Frequency</h4>
             <div class="card-content">
               <!-- View controls -->
               <div class="view-controls">
@@ -116,14 +121,13 @@
                 </div>
                 
                 <div class="button-group" role="group" aria-label="View mode">
-  <button id="chart-view-btn" class="toggle-btn active" aria-pressed="true">
-    Show Chart
-  </button>
-  <button id="table-view-btn" class="toggle-btn" aria-pressed="false">
-    Show Table
-  </button>
-</div>
-
+                  <button id="chart-view-btn" class="toggle-btn active" aria-pressed="true">
+                    Show Chart
+                  </button>
+                  <button id="table-view-btn" class="toggle-btn" aria-pressed="false">
+                    Show Table
+                  </button>
+                </div>
               </div>
 
               <!-- Screen reader announcement for view changes -->
@@ -165,8 +169,8 @@
       </div>
 
       <!-- Card 4: Calculator -->
-      <section class="card" id="calculator" tabindex="-1">
-        <h4 class="card-title">Mortgage Cash Flow Calculator</h4>
+      <section class="card" id="calculator" tabindex="-1" aria-labelledby="calculator-title">
+        <h4 class="card-title" id="calculator-title">Mortgage Cash Flow Calculator</h4>
         <div class="card-content">
           <!-- Input controls -->
           <div class="input-section">
@@ -176,8 +180,11 @@
 
             <div class="input-group-inline">
               <div class="input-inline">
-                <label for="loanAmount" class="input-label-inline">
-                  Loan Amount (1,000–10M):
+                <label for="loanAmount" 
+                       class="input-label-inline"
+                       data-tooltip-id="tooltip-loanAmount"
+                       data-tooltip-text="Range: $1,000 – $10,000,000">
+                  Loan Amount:
                 </label>
                 <div class="input-with-suffix-inline">
                   <input 
@@ -187,13 +194,16 @@
                     min="1000" max="10000000" step="1000" value="300000"
                     aria-required="true" 
                     aria-invalid="false">
-                  <span class="input-suffix-inline">$</span>
+                  <span class="input-suffix-inline" aria-hidden="true">$</span>
                 </div>
               </div>
 
               <div class="input-inline">
-                <label for="annualRate" class="input-label-inline">
-                  Interest Rate (0–25):
+                <label for="annualRate" 
+                       class="input-label-inline"
+                       data-tooltip-id="tooltip-annualRate"
+                       data-tooltip-text="Range: 0% – 25%">
+                  Interest Rate:
                 </label>
                 <div class="input-with-suffix-inline">
                   <input 
@@ -203,13 +213,16 @@
                     min="0" max="25" step="0.01" value="6.5"
                     aria-required="true" 
                     aria-invalid="false">
-                  <span class="input-suffix-inline">%</span>
+                  <span class="input-suffix-inline" aria-hidden="true">%</span>
                 </div>
               </div>
 
               <div class="input-inline">
-                <label for="years" class="input-label-inline">
-                  Term (1–40):
+                <label for="years" 
+                       class="input-label-inline"
+                       data-tooltip-id="tooltip-years"
+                       data-tooltip-text="Range: 1 – 40 years">
+                  Term:
                 </label>
                 <div class="input-with-suffix-inline">
                   <input 
@@ -219,7 +232,7 @@
                     min="1" max="40" step="1" value="30"
                     aria-required="true" 
                     aria-invalid="false">
-                  <span class="input-suffix-inline">yrs</span>
+                  <span class="input-suffix-inline" aria-hidden="true">yrs</span>
                 </div>
               </div>
             </div>
@@ -236,6 +249,11 @@
   </div>
 
   <!-- JavaScript Modules -->
+  <script type="module">
+    // Initialize tooltips
+    import { initTooltips } from './modules/tooltip.js';
+    initTooltips();
+  </script>
   <script type="module" src="calculator.js"></script>
   <script>
   // Simple MathML support check

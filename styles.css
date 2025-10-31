@@ -228,7 +228,7 @@ math mo { margin: 0 0.1em; }
 }
 
 .result-title.price {
-  color: var(--color-orange-text);
+  color: #B0571C;
 }
 
 .result-title.analysis {
@@ -239,7 +239,7 @@ math mo { margin: 0 0.1em; }
   font-family: Georgia, 'Times New Roman', serif;
   font-size: 1.875rem;
   font-weight: 400;
-  color: var(--color-orange);
+  color: #B0571C;
 }
 
 .result-value-small {

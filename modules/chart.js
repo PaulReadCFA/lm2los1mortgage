@@ -30,9 +30,24 @@ export function renderChart(rows, showLabels = true) {
   }
   
   // Make canvas focusable and add keyboard navigation
-  canvas.setAttribute('tabindex', '0');
-  canvas.setAttribute('role', 'img');
-  canvas.setAttribute('aria-label', 'Mortgage cash flow bar chart. Use arrow keys to navigate between data points.');
+    // Make canvas focusable and add keyboard navigation
+ canvas.setAttribute('tabindex', '0');
+canvas.setAttribute('role', 'img');
+canvas.setAttribute('aria-roledescription', 'interactive chart');
+canvas.setAttribute(
+  'aria-label',
+  'Interactive chart. Press Enter to focus, then use arrow keys to explore data points.'
+);
+  // Allow Enter to activate keyboard navigation from wrapper
+const container = canvas.parentElement;
+if (container) {
+  container.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      canvas.focus();
+    }
+  });
+}
   
   const ctx = canvas.getContext('2d');
   
@@ -81,13 +96,18 @@ export function renderChart(rows, showLabels = true) {
         mode: 'index',
         intersect: false
       },
-      onHover: (event, activeElements) => {
-        // Ignore mouse hover if in keyboard mode
-        if (isKeyboardMode && document.activeElement === canvas) {
-          event.native.stopImmediatePropagation();
-          return false;
-        }
-      },
+onHover: (event, activeElements) => {
+  // Skip if keyboard focus already active
+  if (isKeyboardMode && document.activeElement === canvas) return;
+
+  // Announce hovered data point
+  if (activeElements.length > 0) {
+    const index = activeElements[0].index;
+    announceDataPoint(rows[index], totalPayment[index]);
+  }
+}
+
+,
       plugins: {
         title: {
           display: false

@@ -1,109 +1,92 @@
 /**
- * Validation Module – CFA Standard Pattern
- * Used for inline field validation and error summary rendering.
+ * Validation Module - Input validation and error handling
+ * Follows WCAG accessibility guidelines for form validation
  */
 
-import { $, announceToScreenReader } from './utils.js';
+import { $, listen } from './utils.js';
+import { validateInput } from './calculations.js';
 
-/* -------------------------------------------------------------
-   Validation Rules (customize these per calculator)
-------------------------------------------------------------- */
-const validationRules = {
-  loanAmount: {
-    min: 1000,
-    max: 10000000,
-    label: 'Loan Amount',
-    errorMessage: 'Loan amount must be between $1,000 and $10,000,000'
-  },
-  annualRate: {
-    min: 0,
-    max: 25,
-    label: 'Annual Interest Rate (%)',
-    errorMessage: 'Rate must be between 0% and 25%'
-  },
-  years: {
-    min: 1,
-    max: 40,
-    label: 'Loan Term (Years)',
-    errorMessage: 'Term must be between 1 and 40 years'
-  }
-};
+const errors = {};
 
-/* -------------------------------------------------------------
-   Field-level Validation
-------------------------------------------------------------- */
-export function validateField(field, value) {
-  const rules = validationRules[field];
-  if (!rules) return null;
+/**
+ * Validate all inputs
+ * @param {Object} inputs - Input values to validate
+ * @returns {boolean} - True if all valid
+ */
+export function validateAll(inputs) {
+  errors.principal = validateInput('principal', inputs.principal);
+  errors.rate = validateInput('rate', inputs.rate);
+  errors.years = validateInput('years', inputs.years);
 
-  if (isNaN(value) || value === '') {
-    return `${rules.label} is required`;
-  }
-
-  if (value < rules.min || value > rules.max) {
-    return rules.errorMessage;
-  }
-
-  return null;
-}
-
-/* -------------------------------------------------------------
-   Full-form Validation
-------------------------------------------------------------- */
-export function validateAllInputs(inputs) {
-  const errors = {};
-  Object.keys(validationRules).forEach(field => {
-    const error = validateField(field, inputs[field]);
-    if (error) errors[field] = error;
+  // Remove null values
+  Object.keys(errors).forEach(key => {
+    if (errors[key] === null) delete errors[key];
   });
-  return errors;
+
+  updateValidationSummary();
+  return Object.keys(errors).length === 0;
 }
 
-/* -------------------------------------------------------------
-   Inline Field Error Updater
-------------------------------------------------------------- */
-export function updateFieldError(fieldId, errorMessage) {
-  const input = document.getElementById(fieldId);
-  const errorElement = document.getElementById(`${fieldId}-error`);
-  if (!input || !errorElement) return;
-
-  if (errorMessage) {
-    input.setAttribute('aria-invalid', 'true');
-    input.setAttribute('aria-describedby', `${fieldId}-error`);
-    errorElement.textContent = errorMessage;
-  } else {
-    input.setAttribute('aria-invalid', 'false');
-    input.removeAttribute('aria-describedby');
-    errorElement.textContent = '';
-  }
-}
-
-/* -------------------------------------------------------------
-   Validation Summary
-------------------------------------------------------------- */
-export function updateValidationSummary(errors) {
+/**
+ * Update validation summary display
+ */
+function updateValidationSummary() {
   const summary = $('#validation-summary');
   const list = $('#validation-list');
+  
   if (!summary || !list) return;
 
-  if (hasErrors(errors)) {
-    list.innerHTML = '';
-    Object.values(errors).forEach(error => {
-      const li = document.createElement('li');
-      li.textContent = error;
-      list.appendChild(li);
-    });
+  if (Object.keys(errors).length > 0) {
+    list.innerHTML = Object.entries(errors)
+      .map(([field, message]) => `<li>${message}</li>`)
+      .join('');
     summary.style.display = 'block';
-    announceToScreenReader('Validation errors found.');
+    
+    // Focus first invalid field
+    const firstInvalidField = Object.keys(errors)[0];
+    const element = $(`#${firstInvalidField}`);
+    if (element) {
+      element.setAttribute('aria-invalid', 'true');
+      element.focus();
+    }
   } else {
     summary.style.display = 'none';
-    list.innerHTML = '';
+    
+    // Clear aria-invalid from all fields
+    ['principal', 'rate', 'years'].forEach(field => {
+      const element = $(`#${field}`);
+      if (element) {
+        element.removeAttribute('aria-invalid');
+      }
+    });
   }
 }
 
-/* -------------------------------------------------------------
-   Helper
-------------------------------------------------------------- */
-export function hasErrors(errors) {
-  return Object.keys(errors).length > 0;
+/**
+ * Setup real-time validation for a field
+ * @param {string} fieldId - Input field ID
+ * @param {Function} callback - Callback when validation passes
+ */
+export function setupFieldValidation(fieldId, callback) {
+  const element = $(`#${fieldId}`);
+  if (!element) return;
+
+  listen(element, 'blur', () => {
+    const value = Number(element.value);
+    const error = validateInput(fieldId, value);
+    
+    if (error) {
+      errors[fieldId] = error;
+      element.setAttribute('aria-invalid', 'true');
+    } else {
+      delete errors[fieldId];
+      element.removeAttribute('aria-invalid');
+    }
+    
+    updateValidationSummary();
+    
+    if (!error && callback) {
+      callback();
+    }
+  });
 }

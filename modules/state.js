@@ -1,29 +1,31 @@
-// Observable state (reusable)
+/**
+ * Simple Observable State - Reactive state management
+ * Follows the pattern from the simple calculator example
+ */
+
 export const state = {
-  loanAmount: 300000,
-  annualRate: 6.5, // %
-  years: 30,
-
-  // UI
-  viewMode: 'chart',
-
-  // Derived
-  schedule: null,       // rows per year
-  payment: null,        // annual
-  totals: null,         // totals object
-
-  // Validation
-  errors: {},
-
+  inputs: { 
+    principal: 800000, 
+    rate: 6, 
+    years: 30 
+  },
+  view: 'chart',
   listeners: []
 };
 
-export function setState(updates){
+/**
+ * Update state and notify listeners
+ * @param {Object} updates - Partial state updates
+ */
+export function setState(updates) {
   Object.assign(state, updates);
-  state.listeners.forEach(cb => { try{ cb(state); } catch(e){ console.error(e); } });
+  state.listeners.forEach(fn => fn(state));
 }
-export function subscribe(cb){
-  state.listeners.push(cb);
-  return () => { const i = state.listeners.indexOf(cb); if(i>-1) state.listeners.splice(i,1); };
+
+/**
+ * Subscribe to state changes
+ * @param {Function} fn - Callback function
+ */
+export function subscribe(fn) {
+  state.listeners.push(fn);
 }
-export function getState(){ return {...state}; }

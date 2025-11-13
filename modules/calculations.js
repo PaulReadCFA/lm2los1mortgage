@@ -1,68 +1,108 @@
 /**
- * Annual-payment mortgage schedule.
- * PMT = P * [ r (1+r)^n / ((1+r)^n - 1) ]
- * Returns:
- *  - payment (annual)
- *  - schedule: [{ year, payment, interest, principal, endingBalance }]
- *  - totals: { interest, principal, payment }
+ * Mortgage Calculation Logic - Annual Payment Schedule
+ * Calculates monthly payment and generates yearly amortization data
  */
-export function computeMortgage({ loanAmount, annualRate, years }) {
-  const P = Number(loanAmount);
-  const r = Number(annualRate) / 100; // annual rate
-  const n = Math.round(Number(years));
 
-  if (r === 0) {
-    const payment = P / n;
-    const schedule = [];
-    let bal = P;
-    for (let y = 1; y <= n; y++) {
-      const principal = y === n ? bal : payment;
-      const interest = 0;
-      bal = Math.max(0, bal - principal);
-      schedule.push({ year: y, payment, interest, principal, endingBalance: bal });
-    }
-    const totals = {
-      payment: payment * n,
-      interest: 0,
-      principal: P
+/**
+ * Calculate mortgage payment and annual amortization schedule
+ * @param {Object} inputs - { principal, rate, years }
+ * @returns {Object} { monthlyPayment, annualPayment, totalInterest, totalPaid, schedule }
+ */
+export function calculate({ principal = 0, rate = 0, years = 0 }) {
+  // Validate inputs
+  if (principal <= 0 || rate <= 0 || years <= 0) {
+    return {
+      monthlyPayment: 0,
+      annualPayment: 0,
+      totalInterest: 0,
+      totalPaid: 0,
+      schedule: []
     };
-    return { payment, schedule, totals };
   }
 
-  const payment = P * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+  // Convert annual rate to monthly rate (as decimal)
+  const monthlyRate = rate / 100 / 12;
+  const totalMonths = years * 12;
 
+  // Calculate monthly payment using standard mortgage formula
+  // M = P * [r(1+r)^n] / [(1+r)^n - 1]
+  const monthlyPayment = principal * 
+    (monthlyRate * Math.pow(1 + monthlyRate, totalMonths)) / 
+    (Math.pow(1 + monthlyRate, totalMonths) - 1);
+
+  const annualPayment = monthlyPayment * 12;
+
+  // Generate annual amortization schedule
   const schedule = [];
-  let bal = P;
-  let totalInterest = 0;
-  let totalPrincipal = 0;
+  let remainingBalance = principal;
+  let totalInterestPaid = 0;
 
-  for (let y = 1; y <= n; y++) {
-    const interest = bal * r;
-    let principal = payment - interest;
+  for (let year = 1; year <= years; year++) {
+    let yearlyInterest = 0;
+    let yearlyPrincipal = 0;
 
-    // clamp final year to clear balance
-    if (y === n) principal = bal;
+    // Calculate 12 months of payments for this year
+    for (let month = 1; month <= 12; month++) {
+      const interestPayment = remainingBalance * monthlyRate;
+      const principalPayment = monthlyPayment - interestPayment;
 
-    bal = Math.max(0, bal - principal);
-    totalInterest += interest;
-    totalPrincipal += principal;
+      yearlyInterest += interestPayment;
+      yearlyPrincipal += principalPayment;
+      remainingBalance -= principalPayment;
+
+      // Handle rounding errors on final payment
+      if (remainingBalance < 0.01) {
+        remainingBalance = 0;
+      }
+    }
+
+    totalInterestPaid += yearlyInterest;
 
     schedule.push({
-      year: y,
-      payment,
-      interest,
-      principal,
-      endingBalance: bal
+      year,
+      principal: yearlyPrincipal,
+      interest: yearlyInterest,
+      totalPayment: yearlyPrincipal + yearlyInterest,
+      remainingBalance: remainingBalance
     });
   }
 
   return {
-    payment,
-    schedule,
-    totals: {
-      payment: payment * n,
-      interest: totalInterest,
-      principal: totalPrincipal
-    }
+    monthlyPayment,
+    annualPayment,
+    totalInterest: totalInterestPaid,
+    totalPaid: principal + totalInterestPaid,
+    schedule
   };
+}
+
+/**
+ * Validate input field
+ * @param {string} field - Field name
+ * @param {number} value - Field value
+ * @returns {string|null} - Error message or null if valid
+ */
+export function validateInput(field, value) {
+  const rules = {
+    principal: { min: 1000, max: 10000000, label: 'Loan Amount' },
+    rate: { min: 0.1, max: 20, label: 'Interest Rate' },
+    years: { min: 1, max: 40, label: 'Loan Term' }
+  };
+
+  const rule = rules[field];
+  if (!rule) return null;
+
+  if (isNaN(value) || value === null || value === '') {
+    return `${rule.label} is required`;
+  }
+
+  if (value < rule.min) {
+    return `${rule.label} must be at least ${rule.min.toLocaleString()}`;
+  }
+
+  if (value > rule.max) {
+    return `${rule.label} must be no more than ${rule.max.toLocaleString()}`;
+  }
+
+  return null;
 }

@@ -1,55 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Mortgage Cash Flow Decomposition | CFA Institute</title>
-  <link rel="stylesheet" href="styles.css" />
-  <!-- Chart.js -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mortgage Calculator</title>
+  <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
-  <!-- Skip Links (must be first in DOM) -->
-  
-  <a href="#calculator" class="skip-link">Skip to calculator</a>
-  <a href="#data-table" class="skip-link">Skip to data table</a>
+
+  <!-- SKIP LINKS -->
+  <nav aria-label="Skip links">
+    <a href="#data-entry" class="skip-link">Skip to data entry</a>
+    <a href="#results-card" class="skip-link">Skip to results</a>
+    <a href="#visualization-card" class="skip-link">Skip to visualization</a>
+  </nav>
+
+  <!-- NOSCRIPT FALLBACK -->
+  <noscript>
+    <div class="card" style="margin:2rem auto;max-width:600px;">
+      <h2 style="font-family:Georgia,serif;color:#06005a;">Mortgage Calculator</h2>
+      <p><strong>JavaScript is required</strong> for the interactive version.</p>
+      <p>This calculator helps you estimate your annual mortgage payments based on loan amount, interest rate, and loan term.</p>
+    </div>
+  </noscript>
 
   <div class="container">
-    <main class="content" id="main-content">
-      <!-- Card 1: Equation -->
-      <section class="card" id="equation-card" aria-labelledby="equation-title">
-        <h4 class="card-title" id="equation-title">Mortgage Payment Formula</h4>
-        <div class="card-content">
-          <p class="equation-intro">
-            Fixed-rate mortgage with annual payments. The annual payment (PMT) is calculated as:
-          </p>
+    <main class="content">
 
-          <div class="equation-container">
-            <p class="sr-only" id="equation-description">
-              Mathematical formula showing how the annual mortgage payment (PMT) is calculated 
-              based on principal (P), interest rate (r), and number of years (n).
-            </p>
-            <!-- MathML version -->
-            <div id="mathml-equation">
+      <!-- CARD 1 – Title and Formula -->
+      <section class="card" id="title-card">
+        <h1 class="card-title">Mortgage Calculator</h1>
+        <p class="text-sm text-gray-700 mb-3">Calculate your annual mortgage payments and see how principal and interest evolve over time.</p>
+        
+        <div class="formula-box">
+          <div class="formula-box-title">Monthly Payment Formula</div>
+          <div class="equation-container" tabindex="0" role="math"
+               aria-label="Monthly payment M equals principal P times monthly rate r times quantity 1 plus r to the n power, divided by quantity 1 plus r to the n power minus 1"
+               aria-describedby="formula-legend">
+            <div class="mathml-equation">
               <math xmlns="http://www.w3.org/1998/Math/MathML" display="block">
                 <mrow>
-                  <mi mathcolor="#c5611f" mathvariant="bold">PMT</mi>
+                  <mi mathcolor="#1e40af" mathvariant="bold">M</mi>
                   <mo>=</mo>
-                  <mi mathcolor="#3369FF" mathvariant="bold">P</mi>
+                  <mi mathcolor="#c2410c" mathvariant="bold">P</mi>
                   <mo>×</mo>
-                  <mfrac linethickness="1.2px">
+                  <mfrac>
                     <mrow>
-                      <mi mathcolor="#7e22ce">r</mi>
-                      <mo>×</mo>
+                      <mi mathcolor="#6b21a8" mathvariant="bold">r</mi>
                       <msup>
                         <mrow>
                           <mo>(</mo>
                           <mn>1</mn>
                           <mo>+</mo>
-                          <mi mathcolor="#7e22ce">r</mi>
+                          <mi mathcolor="#6b21a8">r</mi>
                           <mo>)</mo>
                         </mrow>
-                        <mi>n</mi>
+                        <mi mathcolor="#047857">n</mi>
                       </msup>
                     </mrow>
                     <mrow>
@@ -58,10 +65,10 @@
                           <mo>(</mo>
                           <mn>1</mn>
                           <mo>+</mo>
-                          <mi mathcolor="#7e22ce">r</mi>
+                          <mi mathcolor="#6b21a8">r</mi>
                           <mo>)</mo>
                         </mrow>
-                        <mi>n</mi>
+                        <mi mathcolor="#047857">n</mi>
                       </msup>
                       <mo>−</mo>
                       <mn>1</mn>
@@ -70,204 +77,135 @@
                 </mrow>
               </math>
             </div>
-
-            <!-- HTML fallback -->
-            <div id="html-equation" hidden>
-              <span class="bold" style="color:#c5611f;">PMT</span> =
-              <span style="color:#3369FF;">P</span> × 
-              [<span style="color:#7e22ce;">r</span>(1 + <span style="color:#7e22ce;">r</span>)<sup>n</sup>] / 
-              [(1 + <span style="color:#7e22ce;">r</span>)<sup>n</sup> − 1]
+            <div class="html-equation" hidden>
+              <strong style="color:#1e40af;">M</strong> = 
+              <span style="color:#c2410c;">P</span> × 
+              [<span style="color:#6b21a8;">r</span>(1 + <span style="color:#6b21a8;">r</span>)<sup style="color:#047857;">n</sup>] / 
+              [(1 + <span style="color:#6b21a8;">r</span>)<sup style="color:#047857;">n</sup> − 1]
             </div>
           </div>
-
-          <p class="equation-intro" style="margin-top: 0.75rem;"  aria-hidden="true">
-            Where <strong style="color:#3369FF;">P</strong> = loan amount, 
-            <strong style="color:#7e22ce;">r</strong> = annual interest rate, 
-            <strong>n</strong> = number of years.
-          </p>
+          <div class="formula-legend" id="formula-legend">
+            <span class="legend-item">
+              <strong style="color:#1e40af;">M</strong> = Monthly Payment
+            </span>
+            <span class="legend-item">
+              <strong style="color:#c2410c;">P</strong> = Principal
+            </span>
+            <span class="legend-item">
+              <strong style="color:#6b21a8;">r</strong> = Monthly Rate
+            </span>
+            <span class="legend-item">
+              <strong style="color:#047857;">n</strong> = Total Months
+            </span>
+          </div>
         </div>
       </section>
 
-      <!-- Cards 2 & 3: Results and Visualizer -->
-      <div class="grid-container">
-        <!-- Results -->
-        <div class="grid-item-left">
-          <section class="card" id="results-card" aria-labelledby="results-title">
-            <h4 class="card-title" id="results-title">Results and Analysis</h4>
-            <div class="card-content">
-              <div id="results-content">
-                <!-- Populated by JavaScript -->
-              </div>
-            </div>
-          </section>
-        </div>
+      <!-- MIDDLE ROW -->
+      <div class="middle-row">
+        <!-- CARD 2 – Results -->
+        <section class="card" id="results-card" tabindex="-1" aria-labelledby="results-title">
+          <h2 class="card-title" id="results-title">Results</h2>
+          <div id="results-content" aria-live="polite"></div>
+          <div id="result-announcement" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+        </section>
 
-        <!-- Visualizer (Chart/Table toggle) -->
-        <div class="grid-item-right">
-          <section class="card" id="data-table" tabindex="-1" aria-labelledby="visualizer-title">
-            <h4 class="card-title" id="visualizer-title">Mortgage Cash Flows: Annual Payment Frequency</h4>
-            <div class="card-content">
-              <!-- View controls -->
-              <div class="view-controls">
-                <div class="legend" id="chart-legend">
-                  <span class="legend-item">
-                    <span class="legend-color" style="background-color: #3369FF; border: 1px solid #333;"></span>
-                    Amortization (Principal)
-                  </span>
-                  <span class="legend-item">
-                    <span class="legend-color" style="background-color: #ea792d; border: 1px solid #333;"></span>
-                    Interest
-                  </span>
-                </div>
-                
-                <div class="button-group" role="group" aria-label="View mode">
-                  <button id="chart-view-btn" class="toggle-btn active" aria-pressed="true">
-                    Show Chart
-                  </button>
-                  <button id="table-view-btn" class="toggle-btn" aria-pressed="false">
-                    Show Table
-                  </button>
-                </div>
-              </div>
+        <!-- CARD 3 – Visualization -->
+        <section class="card" id="visualization-card" tabindex="-1" aria-labelledby="visualization-title">
+          <h2 class="card-title" id="visualization-title">Mortgage Cash Flows</h2>
+          <div class="view-controls">
+            <button id="view-chart-btn" class="toggle-btn active" aria-pressed="true">Chart</button>
+            <button id="view-table-btn" class="toggle-btn" aria-pressed="false">Table</button>
+          </div>
 
-              <!-- Screen reader announcement for view changes -->
-              <div class="sr-only" aria-live="polite" aria-atomic="true" id="view-announcement"></div>
+          <div id="chart-container" class="chart-wrapper">
+            <canvas id="chart" role="img" aria-label="Stacked bar chart showing annual principal and interest payments"></canvas>
+            <div id="chart-announcement" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+          </div>
 
-              <!-- Hidden chart description -->
-              <div class="sr-only" id="mortgage-chart-desc">
-                <h5 id="mortgage-chart-title">Mortgage cash flows over time</h5>
-                <p>
-                  This chart displays the complete cash flow timeline for a mortgage. 
-                  At each year, the fixed payment is split into two components: interest (shown in orange) 
-                  paid to the lender, and amortization/principal (shown in blue) that reduces the loan balance. 
-                  The stacked bars show how these components change over the loan term. 
-                  Use the arrow keys to navigate between data points and hear the specific values for each year.
-                </p>
-              </div>
-
-              <!-- Chart container -->
-              <div id="chart-container" class="chart-wrapper"
-                   role="img"
-                   aria-labelledby="mortgage-chart-title"
-                   aria-describedby="mortgage-chart-desc"
-                   tabindex="0">
-                <canvas id="mortgage-chart"></canvas>
-              </div>
-
-              <!-- Table container -->
-              <div id="table-container" class="table-wrapper" style="display:none;">
-                <table id="data-table-element" class="data-table" tabindex="0">
-                  <!-- Populated by JavaScript -->
-                </table>
-                <p id="table-note" class="table-note">
-                  Note: Values show annual cash flows over the mortgage term.
-                </p>
-              </div>
-            </div>
-          </section>
-        </div>
+          <div id="table-container">
+            <table id="data-table" tabindex="0" role="region" aria-labelledby="visualization-title">
+              <caption class="sr-only">Annual amortization schedule showing year, principal, interest, and remaining balance</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Year</th>
+                  <th scope="col">Principal</th>
+                  <th scope="col">Interest</th>
+                  <th scope="col">Total Payment</th>
+                  <th scope="col">Remaining Balance</th>
+                </tr>
+              </thead>
+              <tbody id="table-body"></tbody>
+            </table>
+          </div>
+        </section>
       </div>
 
-      <!-- Card 4: Calculator -->
-      <section class="card" id="calculator" tabindex="-1" aria-labelledby="calculator-title">
-        <h4 class="card-title" id="calculator-title">Mortgage Cash Flow Calculator</h4>
-        <div class="card-content">
-          <!-- Input controls -->
-          <div class="input-section">
-            <p class="sr-only" id="inputHelp">
-              Enter values and the calculator updates results and the chart automatically.
-            </p>
+      <!-- CARD 4 – Data Entry -->
+      <section class="card" id="data-entry" tabindex="-1" role="region" aria-labelledby="inputs-title">
+        <h2 class="card-title" id="inputs-title">Loan Parameters</h2>
 
-            <div class="input-group-inline">
-              <div class="input-inline">
-                <label for="loanAmount" 
-                       class="input-label-inline"
-                       data-tooltip-id="tooltip-loanAmount"
-                       data-tooltip-text="Range: $1,000 – $10,000,000">
-                  Loan Amount:
-                </label>
-                <div class="input-with-suffix-inline">
-                  <input 
-                    type="number" 
-                    id="loanAmount" 
-                    class="input-field-inline"
-                    min="1000" max="10000000" step="1000" value="300000"
-                    aria-required="true" 
-                    aria-invalid="false">
-                  <span class="input-suffix-inline" aria-hidden="true">$</span>
-                </div>
-              </div>
-
-              <div class="input-inline">
-                <label for="annualRate" 
-                       class="input-label-inline"
-                       data-tooltip-id="tooltip-annualRate"
-                       data-tooltip-text="Range: 0% – 25%">
-                  Interest Rate:
-                </label>
-                <div class="input-with-suffix-inline">
-                  <input 
-                    type="number" 
-                    id="annualRate" 
-                    class="input-field-inline"
-                    min="0" max="25" step="0.01" value="6.5"
-                    aria-required="true" 
-                    aria-invalid="false">
-                  <span class="input-suffix-inline" aria-hidden="true">%</span>
-                </div>
-              </div>
-
-              <div class="input-inline">
-                <label for="years" 
-                       class="input-label-inline"
-                       data-tooltip-id="tooltip-years"
-                       data-tooltip-text="Range: 1 – 40 years">
-                  Term:
-                </label>
-                <div class="input-with-suffix-inline">
-                  <input 
-                    type="number" 
-                    id="years" 
-                    class="input-field-inline"
-                    min="1" max="40" step="1" value="30"
-                    aria-required="true" 
-                    aria-invalid="false">
-                  <span class="input-suffix-inline" aria-hidden="true">yrs</span>
-                </div>
-              </div>
+        <div class="input-grid">
+          <div class="input-row">
+            <label for="principal" class="input-label-inline">
+              Loan Amount
+              <span class="text-red-500">*</span>
+            </label>
+            <div class="input-wrapper">
+              <input type="number" id="principal" class="input-field-inline"
+                     min="1000" max="10000000" step="1000" value="800000"
+                     aria-required="true"
+                     aria-describedby="principal-help">
             </div>
+            <span id="principal-help" class="input-help">Total borrowed</span>
+          </div>
 
-            <!-- Validation summary -->
-            <div id="validation-summary" class="validation-summary" role="alert" style="display: none;">
-              <div class="validation-title">Please correct the following:</div>
-              <ul id="validation-list"></ul>
+          <div class="input-row">
+            <label for="rate" class="input-label-inline">
+              Annual Rate (%)
+              <span class="text-red-500">*</span>
+            </label>
+            <div class="input-wrapper">
+              <input type="number" id="rate" class="input-field-inline"
+                     min="0.1" max="20" step="0.1" value="6"
+                     aria-required="true"
+                     aria-describedby="rate-help">
             </div>
+            <span id="rate-help" class="input-help">Interest rate</span>
+          </div>
+
+          <div class="input-row">
+            <label for="years" class="input-label-inline">
+              Loan Term (years)
+              <span class="text-red-500">*</span>
+            </label>
+            <div class="input-wrapper">
+              <input type="number" id="years" class="input-field-inline"
+                     min="1" max="40" step="1" value="30"
+                     aria-required="true"
+                     aria-describedby="years-help">
+            </div>
+            <span id="years-help" class="input-help">Length of loan</span>
           </div>
         </div>
+
+        <div id="validation-summary" class="validation-summary" role="alert" aria-live="polite"
+             style="display:none;">
+          <div class="validation-title">Please correct the following:</div>
+          <ul id="validation-list"></ul>
+        </div>
       </section>
+
     </main>
   </div>
 
-  <!-- JavaScript Modules -->
+  <script type="module" src="./calculator.js"></script>
   <script type="module">
-    // Initialize tooltips
-    import { initTooltips } from './modules/tooltip.js';
-    initTooltips();
-  </script>
-  <script type="module" src="calculator.js"></script>
-  <script>
-  // Simple MathML support check
-  const supportsMathML = CSS.supports('math-style: normal');
-
-  if (!supportsMathML) {
-    // Hide MathML, show fallback
-    const mathml = document.getElementById('mathml-equation');
-    const fallback = document.getElementById('html-equation');
-    if (mathml && fallback) {
-      mathml.hidden = true;
-      fallback.hidden = false;
+    // Fallback for browsers that don't support MathML
+    if (!CSS.supports('math-style: normal')) {
+      document.querySelectorAll('.mathml-equation').forEach(el => el.hidden = true);
+      document.querySelectorAll('.html-equation').forEach(el => el.hidden = false);
     }
-  }
   </script>
 </body>
 </html>

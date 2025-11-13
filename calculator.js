@@ -1,322 +1,186 @@
-// ==================== STATE & CORE ====================
+/**
+ * calculator.js – Main Entry Point
+ * Mortgage Calculator with Annual Payment Schedule
+ * Follows accessibility best practices and modular architecture
+ */
+
 import { state, setState, subscribe } from './modules/state.js';
-
-// ==================== VALIDATION ====================
-// These names match the CFA toolkit exactly (REUSABLE_MODULES.md)
-import {
-  validateAllInputs as validateAll,   // optional alias for clarity
-  validateField,
-  updateFieldError,
-  updateValidationSummary,
-  hasErrors
-} from './modules/validation.js';
-
-// ==================== UTILITIES ====================
-// All safe helpers (focus management, announcer, etc.)
-import {
-  $,
-  $$,
-  listen,
-  focusElement,
-  announceToScreenReader,
-  debounce,
-  formatCurrency
-} from './modules/utils.js';
-
-// ==================== DOMAIN LOGIC ====================
-import { computeMortgage } from './modules/calculations.js';
-
-// ==================== VISUALS ====================
-import { renderChart, shouldShowLabels, destroyChart } from './modules/chart.js';
-import { renderTable } from './modules/table.js';
+import { calculate } from './modules/calculations.js';
 import { renderResults } from './modules/results.js';
+import { renderChart, destroyChart } from './modules/chart.js';
+import { renderTable } from './modules/table.js';
+import { $, listen, debounce } from './modules/utils.js';
+import { validateAll, setupFieldValidation } from './modules/validation.js';
 
-
-
-function init(){
-  // console.log('Mortgage Calculator initializing...');
-  
+/* ---------- INITIALIZATION ---------- */
+function init() {
   setupInputs();
   setupViewToggle();
-  setupSkipLinks();
-  setupResize();
-
-  // Subscribe to state changes BEFORE initial calculation
-  subscribe(handleStateChange);
+  subscribe(updateAll);
+  detectNarrowScreen();
+  window.addEventListener('resize', debounce(detectNarrowScreen, 200));
   
-  // Initial compute & render
-  recalc();
-  
-  // Run self-tests (comment out for production)
-  // runSelfTests();
-  
-  // console.log('Mortgage Calculator ready');
+  // Initial calculation
+  updateAll(state);
 }
 
-function setupInputs(){
-  const ids = ['loanAmount','annualRate','years'];
-  ids.forEach(id=>{
-    const el = $(`#${id}`);
-    const update = debounce(()=>{
-      const val = parseFloat(el.value);
+/* ---------- INPUT HANDLERS ---------- */
+let lastAnnounced = { principal: 800000, rate: 6, years: 30 };
+
+const announceChange = debounce((field, value) => {
+  const labels = {
+    principal: 'Loan Amount',
+    rate: 'Interest Rate',
+    years: 'Loan Term'
+  };
+  
+  const formattedValue = field === 'principal' 
+    ? `$${value.toLocaleString()}`
+    : field === 'rate'
+    ? `${value}%`
+    : `${value} years`;
+  
+  $('#result-announcement').textContent = `${labels[field]} changed to ${formattedValue}`;
+  setTimeout(() => $('#result-announcement').textContent = '', 1500);
+}, 500);
+
+function setupInputs() {
+  ['principal', 'rate', 'years'].forEach(id => {
+    const element = $(`#${id}`);
+    if (!element) return;
+
+    const updateValue = debounce(() => {
+      const value = Number(element.value);
       
-      // Get all current values for validation
-      const currentValues = {
-        loanAmount: id === 'loanAmount' ? val : state.loanAmount,
-        annualRate: id === 'annualRate' ? val : state.annualRate,
-        years: id === 'years' ? val : state.years
-      };
-
-      const errors = validateAll(currentValues);
-
-      updateFieldError(id, errors[id] || null);
-      updateValidationSummary(errors);
-
-      // Single setState call to prevent multiple re-renders
-      if (Object.keys(errors).length === 0) {
-        // Recalculate and update everything at once
-        try {
-          const { payment, schedule, totals } = computeMortgage(currentValues);
-          setState({ 
-            [id]: val, 
-            errors, 
-            payment, 
-            schedule, 
-            totals 
-          });
-        } catch(e) {
-          console.error('Calculation error', e);
-          setState({ 
-            [id]: val, 
-            errors, 
-            schedule: null, 
-            payment: null, 
-            totals: null 
-          });
+      // Validate and update state
+      if (!isNaN(value) && value > 0) {
+        const newInputs = { ...state.inputs, [id]: value };
+        setState({ inputs: newInputs });
+        
+        // Announce significant changes
+        if (Math.abs(value - lastAnnounced[id]) > 0.01) {
+          announceChange(id, value);
+          lastAnnounced[id] = value;
         }
-      } else {
-        setState({ 
-          [id]: val, 
-          errors, 
-          schedule: null, 
-          payment: null, 
-          totals: null 
-        });
       }
-    }, 150);  // Reduced from 250ms for faster response
+    }, 300);
 
-    listen(el, 'input', update);
-    listen(el, 'change', update);
+    listen(element, 'input', updateValue);
+    listen(element, 'change', updateValue);
+    
+    // Setup validation
+    setupFieldValidation(id, updateValue);
   });
 }
 
-function recalc(){
-  try{
-    const inputs = { loanAmount: state.loanAmount, annualRate: state.annualRate, years: state.years };
-    const errors = validateAll(inputs);
-    if (Object.keys(errors).length){ setState({ errors, schedule:null, payment:null, totals:null }); updateValidationSummary(errors); return; }
+/* ---------- VIEW TOGGLE WITH ARROW KEYS ---------- */
+function setupViewToggle() {
+  const chartBtn = $('#view-chart-btn');
+  const tableBtn = $('#view-table-btn');
 
-    const { payment, schedule, totals } = computeMortgage(inputs);
-    setState({ payment, schedule, totals });
-  }catch(e){
-    console.error('Calculation error', e);
-    setState({ schedule: null, payment: null, totals: null });
-  }
-}
+  updateButtonStates();
 
-function handleStateChange(s) {
-  if (!s.schedule || !s.payment || !s.totals) return;
-
-  // === RESULTS CARD ===
-  renderResults({ payment: s.payment, totals: s.totals }, { years: s.years });
-
-  // === CHART (only if visible) ===
-  if (s.viewMode === 'chart') {
-    renderChart(s.schedule, shouldShowLabels());
-  }
-
-  // === TABLE (only if visible) ===
-  if (s.viewMode === 'table') {
-    renderScheduleTable(s.schedule, s.totals);
-  }
-}
-
-
-function renderScheduleTable(schedule, totals){
-  renderTable(
-    schedule.map(row => ({
-      year: row.year,
-      payment: row.payment,
-      interest: row.interest,
-      principal: row.principal,
-      endingBalance: row.endingBalance
-    })),
-    {
-      tableId: 'data-table-element',
-      caption: 'Mortgage amortization schedule: annual payment split into interest and principal with ending balance.',
-      columns: [
-        { key: 'year', header: 'Year', align: 'left' },
-        { key: 'payment', header: 'Payment', align: 'right', format: v => formatCurrency(v) },
-        { key: 'interest', header: 'Interest', align: 'right', format: v => formatCurrency(v) },
-        { key: 'principal', header: 'Amortization', align: 'right', format: v => formatCurrency(v) },
-        { key: 'endingBalance', header: 'Ending Balance', align: 'right', format: v => formatCurrency(v) }
-      ],
-      totals: {
-        payment: totals.payment,
-        interest: totals.interest,
-        principal: totals.principal,
-        endingBalance: 0
-      }
-    }
-  );
-}
-
-function setupViewToggle(){
-  const chartBtn = $('#chart-view-btn');
-  const tableBtn = $('#table-view-btn');
-  const chartContainer = $('#chart-container');
-  const tableContainer = $('#table-container');
-  const legend = $('#chart-legend');
-
-  listen(chartBtn,'click', ()=>{
-    setState({ viewMode: 'chart' });
-    chartBtn.classList.add('active'); chartBtn.setAttribute('aria-pressed','true');
-    tableBtn.classList.remove('active'); tableBtn.setAttribute('aria-pressed','false');
-    chartContainer.style.display = 'block';
-    tableContainer.style.display = 'none';
-    legend.style.display = 'flex';
-    announceToScreenReader('Chart view active');
-    setTimeout(()=> chartContainer.focus(), 100);
-    if (state.schedule) renderChart(state.schedule, shouldShowLabels());
+  listen(chartBtn, 'click', () => {
+    setState({ view: 'chart' });
+    updateButtonStates();
   });
 
-  listen(tableBtn,'click', ()=>{
-    setState({ viewMode: 'table' });
-    tableBtn.classList.add('active'); tableBtn.setAttribute('aria-pressed','true');
-    chartBtn.classList.remove('active'); chartBtn.setAttribute('aria-pressed','false');
-    tableContainer.style.display = 'block';
-    chartContainer.style.display = 'none';
-    legend.style.display = 'none';
-    announceToScreenReader('Table view active');
-    setTimeout(()=> $('#data-table-element').focus(), 100);
-    destroyChart();
-    // Render table when switching to table view
-    if (state.schedule && state.totals) {
-      renderScheduleTable(state.schedule, state.totals);
-    }
+  listen(tableBtn, 'click', () => {
+    setState({ view: 'table' });
+    updateButtonStates();
   });
-}
 
-function setupResize(){
-  let t;
-  listen(window,'resize', ()=>{
-    clearTimeout(t);
-    t = setTimeout(()=>{
-      if (state.viewMode==='chart' && state.schedule){
-        renderChart(state.schedule, shouldShowLabels());
-      }
-    }, 250);
-  });
-}
-
-/**
- * Set up skip link handlers for accessibility
- */
-function setupSkipLinks() {
-  const skipToTable = document.querySelector('a[href="#data-table"]');
-  
-  if (skipToTable) {
-    listen(skipToTable, 'click', (e) => {
-      // Prevent default to handle it ourselves
-      e.preventDefault();
-      
-      // Switch to table view if not already there
-      if (state.viewMode !== 'table') {
-        const tableBtn = $('#table-view-btn');
-        if (tableBtn) tableBtn.click();
-      } else {
-        // If already in table view, just focus the table
-        focusElement($('#data-table-element'), 100);
-      }
-      
-      // Scroll the section into view
-      const section = $('#data-table');
-      if (section) {
-        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Keyboard navigation between toggle buttons
+  [chartBtn, tableBtn].forEach(btn => {
+    btn.tabIndex = 0;
+    
+    btn.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const next = btn === chartBtn ? tableBtn : chartBtn;
+        next.focus();
+        setState({ view: next.id === 'view-chart-btn' ? 'chart' : 'table' });
+        updateButtonStates();
       }
     });
+  });
+
+  // Set initial focus based on view
+  (state.view === 'chart' ? chartBtn : tableBtn).focus();
+}
+
+/* ---------- BUTTON STATE MANAGEMENT ---------- */
+function updateButtonStates() {
+  const chartBtn = $('#view-chart-btn');
+  const tableBtn = $('#view-table-btn');
+  const isTable = state.view === 'table' || document.body.classList.contains('force-table');
+
+  chartBtn.classList.toggle('active', !isTable);
+  tableBtn.classList.toggle('active', isTable);
+  
+  chartBtn.setAttribute('aria-pressed', !isTable);
+  tableBtn.setAttribute('aria-pressed', isTable);
+  
+  // Disable chart button on narrow screens
+  chartBtn.disabled = document.body.classList.contains('force-table');
+}
+
+/* ---------- RESPONSIVE BEHAVIOR ---------- */
+function detectNarrowScreen() {
+  const narrow = window.innerWidth <= 480;
+  
+  if (narrow) {
+    document.body.classList.add('force-table');
+    if (state.view !== 'table') {
+      setState({ view: 'table' });
+    }
+  } else {
+    document.body.classList.remove('force-table');
+  }
+  
+  updateButtonStates();
+}
+
+/* ---------- UPDATE ALL VIEWS ---------- */
+function updateAll(currentState) {
+  // Validate inputs
+  if (!validateAll(currentState.inputs)) {
+    // If validation fails, show empty/zero results
+    renderResults({
+      monthlyPayment: 0,
+      annualPayment: 0,
+      totalInterest: 0,
+      totalPaid: 0
+    });
+    renderTable({ schedule: [] });
+    return;
+  }
+
+  // Calculate mortgage
+  const result = calculate(currentState.inputs);
+  
+  // Update results
+  renderResults(result);
+  renderTable(result);
+
+  // Update visualization based on view
+  const isTableView = currentState.view === 'table' || 
+                      document.body.classList.contains('force-table');
+
+  if (isTableView) {
+    $('#chart-container').style.display = 'none';
+    $('#table-container').style.display = 'block';
+    destroyChart();
+  } else {
+    $('#chart-container').style.display = 'block';
+    $('#table-container').style.display = 'none';
+    renderChart(result);
   }
 }
 
-/**
- * Run self-tests to verify calculations
- */
-function runSelfTests() {
-  // console.log('Running self-tests...');
-  
-  const tests = [
-    {
-      name: 'Zero interest mortgage',
-      inputs: { loanAmount: 120000, annualRate: 0, years: 10 },
-      expected: { payment: 12000 }
-    },
-    {
-      name: 'Standard 30-year mortgage',
-      inputs: { loanAmount: 300000, annualRate: 6.5, years: 30 },
-      expected: { paymentMin: 22000, paymentMax: 24000 }
-    },
-    {
-      name: 'Short-term high rate',
-      inputs: { loanAmount: 100000, annualRate: 10, years: 5 },
-      expected: { paymentMin: 25000, paymentMax: 27000 }
-    }
-  ];
-  
-  tests.forEach(test => {
-    try {
-      const result = computeMortgage(test.inputs);
-      
-      if (test.expected.payment !== undefined) {
-        const diff = Math.abs(result.payment - test.expected.payment);
-        if (diff < 1) { // Within $1
-          // console.log(`✓ ${test.name} passed`);
-        } else {
-          console.warn(`✗ ${test.name} failed: expected ${test.expected.payment}, got ${result.payment.toFixed(2)}`);
-        }
-      } else if (test.expected.paymentMin !== undefined) {
-        if (result.payment >= test.expected.paymentMin && result.payment <= test.expected.paymentMax) {
-          // console.log(`✓ ${test.name} passed`);
-        } else {
-          console.warn(`✗ ${test.name} failed: payment ${result.payment.toFixed(2)} not in range [${test.expected.paymentMin}, ${test.expected.paymentMax}]`);
-        }
-      }
-    } catch (error) {
-      console.error(`✗ ${test.name} threw error:`, error);
-    }
-  });
-  
-  // console.log('Self-tests complete');
-}
-
-/**
- * Cleanup function (called on page unload)
- */
-function cleanup() {
-  destroyChart();
-  // console.log('Calculator cleanup complete');
-}
-
-// Register cleanup
-window.addEventListener('beforeunload', cleanup);
-
-// Register cleanup
-window.addEventListener('beforeunload', cleanup);
-
+/* ---------- START APPLICATION ---------- */
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {
   init();
 }
-
-// Export for potential external use
-export { state, setState, recalc as updateCalculations };
